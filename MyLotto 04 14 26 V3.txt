@@ -11643,7 +11643,7 @@ foreach ($bestOpps as $__dLid => $__dOpp) {
     $__bestSetupSource = (string)($__bestSetupRow['source'] ?? ($__dOpp['best_rank']['source'] ?? ''));
     $__drawDates = array();
     $__numberCounts = array();
-    $__modeCounts = array();
+    $__modeStats = array();
     $__topHitCount = 0;
 
     foreach ((array)($__dOpp['all_scored_runs'] ?? array()) as $__scoredRun) {
@@ -11671,10 +11671,46 @@ foreach ($bestOpps as $__dLid => $__dOpp) {
             if ((string)($__runRow['source'] ?? '') === 'skai_prediction') {
                 $__runDisp = mylottoexpertResolveRunDisplayInfo($__runRow, $__methodLabels);
                 $__modeLabel = $__runDisp['mode'] !== '' ? $__runDisp['mode'] : 'Default';
-                if (!isset($__modeCounts[$__modeLabel])) {
-                    $__modeCounts[$__modeLabel] = 0;
+                $__modeCount = 1;
+                $__modeRankScore = (float)($__scoredRun['rank_score'] ?? 0);
+                $__modeHitScore = (int)($__scoredRun['hits'] ?? 0);
+                $__modeBlendInfo = mylottoexpertBuildBlendDisplayInfo($__runRow, (array)($__runDisp['settings'] ?? array()));
+                $__modeBlendValue = '';
+                if (isset($__modeBlendInfo['ai']) && $__modeBlendInfo['ai'] !== null && $__modeBlendInfo['ai'] !== '') {
+                    $__modeAiText = mylottoexpertFormatPercentForLabel($__modeBlendInfo['ai']);
+                    if ($__modeAiText !== '') {
+                        $__modeBlendValue = $__modeAiText . '%';
+                    }
                 }
-                $__modeCounts[$__modeLabel]++;
+
+                if (!isset($__modeStats[$__modeLabel])) {
+                    $__modeStats[$__modeLabel] = array(
+                        'count' => 0,
+                        'best_rank_score' => -1,
+                        'best_hits' => -1,
+                        'best_run_id' => 0,
+                        'blend_value' => ''
+                    );
+                }
+
+                $__modeStats[$__modeLabel]['count'] += $__modeCount;
+
+                $__modeIsBetter = (
+                    $__modeRankScore > (float)$__modeStats[$__modeLabel]['best_rank_score']
+                    || ($__modeRankScore === (float)$__modeStats[$__modeLabel]['best_rank_score']
+                        && $__modeHitScore > (int)$__modeStats[$__modeLabel]['best_hits'])
+                    || ($__modeRankScore === (float)$__modeStats[$__modeLabel]['best_rank_score']
+                        && $__modeHitScore === (int)$__modeStats[$__modeLabel]['best_hits']
+                        && $__runId > (int)$__modeStats[$__modeLabel]['best_run_id'])
+                );
+                if ($__modeIsBetter) {
+                    $__modeStats[$__modeLabel]['best_rank_score'] = $__modeRankScore;
+                    $__modeStats[$__modeLabel]['best_hits'] = $__modeHitScore;
+                    $__modeStats[$__modeLabel]['best_run_id'] = $__runId;
+                    $__modeStats[$__modeLabel]['blend_value'] = $__modeBlendValue;
+                } elseif ($__modeStats[$__modeLabel]['blend_value'] === '' && $__modeBlendValue !== '') {
+                    $__modeStats[$__modeLabel]['blend_value'] = $__modeBlendValue;
+                }
             }
         }
     }
@@ -11723,23 +11759,48 @@ foreach ($bestOpps as $__dLid => $__dOpp) {
 
     $__dominantModeText = 'No dominant SKAI mode yet';
     $__dominantModeEntries = array();
-    if (!empty($__modeCounts)) {
-        arsort($__modeCounts);
-        $__modeTotal = array_sum($__modeCounts);
+    if (!empty($__modeStats)) {
+        $__modeTotal = 0;
+        foreach ($__modeStats as $__modeStatTotal) {
+            $__modeTotal += (int)($__modeStatTotal['count'] ?? 0);
+        }
+        uasort($__modeStats, function ($a, $b) {
+            $aRank = (float)($a['best_rank_score'] ?? -1);
+            $bRank = (float)($b['best_rank_score'] ?? -1);
+            if ($bRank > $aRank) { return 1; }
+            if ($bRank < $aRank) { return -1; }
+
+            $aHits = (int)($a['best_hits'] ?? -1);
+            $bHits = (int)($b['best_hits'] ?? -1);
+            if ($bHits > $aHits) { return 1; }
+            if ($bHits < $aHits) { return -1; }
+
+            $aCount = (int)($a['count'] ?? 0);
+            $bCount = (int)($b['count'] ?? 0);
+            if ($bCount > $aCount) { return 1; }
+            if ($bCount < $aCount) { return -1; }
+
+            $aRunId = (int)($a['best_run_id'] ?? 0);
+            $bRunId = (int)($b['best_run_id'] ?? 0);
+            if ($bRunId > $aRunId) { return 1; }
+            if ($bRunId < $aRunId) { return -1; }
+            return 0;
+        });
         $__modeParts = array();
         $__modeShown = 0;
-        foreach ($__modeCounts as $__modeLabel => $__modeCount) {
+        foreach ($__modeStats as $__modeLabel => $__modeStat) {
+            $__modeCount = (int)($__modeStat['count'] ?? 0);
             $__modeLabelRaw = trim((string)$__modeLabel);
             $__modeDisplayLabel = $__modeLabelRaw;
             $__modeUsageShare = (int)round(($__modeCount / max(1, $__modeTotal)) * 100);
-            $__modeBlendValue = '';
+            $__modeBlendValue = trim((string)($__modeStat['blend_value'] ?? ''));
             $__modeMainLabel = $__modeLabelRaw;
 
-            if (preg_match('/^(.*)\(([^()]*)\)\s*$/', $__modeLabelRaw, $__modeMatch)) {
+            if ($__modeBlendValue === '' && preg_match('/^(.*)\(([^()]*)\)\s*$/', $__modeLabelRaw, $__modeMatch)) {
                 $__modeMainLabel = trim((string)$__modeMatch[1]);
                 $__modeBlendValue = trim((string)$__modeMatch[2]);
                 $__modeDisplayLabel = $__modeMainLabel;
-            } else {
+            } elseif ($__modeBlendValue === '') {
                 if (preg_match('/AI\s+share\s*:\s*(AI|Skip)\s*(\d+(?:\.\d+)?)%/i', $__modeLabelRaw, $__modeBlendInline)) {
                     $__modeBlendValue = strtoupper(trim((string)$__modeBlendInline[1])) . ' ' . trim((string)$__modeBlendInline[2]) . '%';
                 } elseif (preg_match('/Blend\s*:\s*(AI|Skip)\s*(\d+(?:\.\d+)?)%/i', $__modeLabelRaw, $__modeBlendInline2)) {
@@ -11807,7 +11868,7 @@ foreach ($bestOpps as $__dLid => $__dOpp) {
     if (!empty($__repeatPool)) {
         $__summaryBullets[] = 'Numbers resurfacing across scored runs: ' . $__repeatPoolDisplay . ' (' . $__repeatSupportLabel . ' for the most repeated number).';
     }
-    if (!empty($__modeCounts)) {
+    if (!empty($__modeStats)) {
         $__summaryBullets[] = 'Dominant SKAI mode / blend mix: ' . $__dominantModeText . '.';
     }
     if ($__drawCount > 0) {
