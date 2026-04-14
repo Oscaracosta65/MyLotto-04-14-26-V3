@@ -11707,8 +11707,6 @@ foreach ($bestOpps as $__dLid => $__dOpp) {
                     $__modeStats[$__modeLabel]['best_hits'] = $__modeHitScore;
                     $__modeStats[$__modeLabel]['best_run_id'] = $__runId;
                     $__modeStats[$__modeLabel]['blend_value'] = $__modeBlendValue;
-                } elseif ($__modeStats[$__modeLabel]['blend_value'] === '' && $__modeBlendValue !== '') {
-                    $__modeStats[$__modeLabel]['blend_value'] = $__modeBlendValue;
                 }
             }
         }
@@ -11795,25 +11793,27 @@ foreach ($bestOpps as $__dLid => $__dOpp) {
             $__modeBlendValue = trim((string)($__modeStat['blend_value'] ?? ''));
             $__modeMainLabel = $__modeLabelRaw;
 
-            if ($__modeBlendValue === '' && preg_match('/^(.*)\(([^()]*)\)\s*$/', $__modeLabelRaw, $__modeMatch)) {
-                $__modeMainLabel = trim((string)$__modeMatch[1]);
-                $__modeBlendValue = trim((string)$__modeMatch[2]);
-                $__modeDisplayLabel = $__modeMainLabel;
-            } else {
-                if (preg_match('/AI\s+share\s*:\s*(AI|Skip)\s*(\d+(?:\.\d+)?)%/i', $__modeLabelRaw, $__modeBlendInline)) {
-                    $__modeBlendValue = strtoupper(trim((string)$__modeBlendInline[1])) . ' ' . trim((string)$__modeBlendInline[2]) . '%';
-                } elseif (preg_match('/Blend\s*:\s*(AI|Skip)\s*(\d+(?:\.\d+)?)%/i', $__modeLabelRaw, $__modeBlendInline2)) {
-                    $__modeBlendValue = strtoupper(trim((string)$__modeBlendInline2[1])) . ' ' . trim((string)$__modeBlendInline2[2]) . '%';
-                } elseif (preg_match('/\b(AI|Skip)\s*(\d+(?:\.\d+)?)%\b/i', $__modeLabelRaw, $__modeBlendLoose)) {
-                    $__modeBlendValue = strtoupper(trim((string)$__modeBlendLoose[1])) . ' ' . trim((string)$__modeBlendLoose[2]) . '%';
-                } elseif (preg_match('/^(.*?)(\d+(?:\.\d+)?)%\s*AI\s*[-–|]?\s*(.*)$/i', $__modeLabelRaw, $__modeMatchAlt)) {
-                    $__modeMainLabel = trim((string)$__modeMatchAlt[1], " -|\t\r\n \v");
-                    $__modeBlendValue = 'AI ' . trim((string)$__modeMatchAlt[2]) . '%';
-                    $__modeBlendTail = trim((string)$__modeMatchAlt[3], " -|\t\r\n \v");
-                    if ($__modeBlendTail !== '') {
-                        $__modeDisplayLabel = $__modeMainLabel !== '' ? ($__modeMainLabel . ' - ' . $__modeBlendTail) : $__modeBlendTail;
-                    } else {
-                        $__modeDisplayLabel = $__modeMainLabel;
+            if ($__modeBlendValue === '') {
+                if (preg_match('/^(.*)\(([^()]*)\)\s*$/', $__modeLabelRaw, $__modeMatch)) {
+                    $__modeMainLabel = trim((string)$__modeMatch[1]);
+                    $__modeBlendValue = trim((string)$__modeMatch[2]);
+                    $__modeDisplayLabel = $__modeMainLabel;
+                } else {
+                    if (preg_match('/AI\s+share\s*:\s*(AI|Skip)\s*(\d+(?:\.\d+)?)%/i', $__modeLabelRaw, $__modeBlendInline)) {
+                        $__modeBlendValue = strtoupper(trim((string)$__modeBlendInline[1])) . ' ' . trim((string)$__modeBlendInline[2]) . '%';
+                    } elseif (preg_match('/Blend\s*:\s*(AI|Skip)\s*(\d+(?:\.\d+)?)%/i', $__modeLabelRaw, $__modeBlendInline2)) {
+                        $__modeBlendValue = strtoupper(trim((string)$__modeBlendInline2[1])) . ' ' . trim((string)$__modeBlendInline2[2]) . '%';
+                    } elseif (preg_match('/\b(AI|Skip)\s*(\d+(?:\.\d+)?)%\b/i', $__modeLabelRaw, $__modeBlendLoose)) {
+                        $__modeBlendValue = strtoupper(trim((string)$__modeBlendLoose[1])) . ' ' . trim((string)$__modeBlendLoose[2]) . '%';
+                    } elseif (preg_match('/^(.*?)(\d+(?:\.\d+)?)%\s*AI\s*[-–|]?\s*(.*)$/i', $__modeLabelRaw, $__modeMatchAlt)) {
+                        $__modeMainLabel = trim((string)$__modeMatchAlt[1], " -|\t\r\n \v");
+                        $__modeBlendValue = 'AI ' . trim((string)$__modeMatchAlt[2]) . '%';
+                        $__modeBlendTail = trim((string)$__modeMatchAlt[3], " -|\t\r\n \v");
+                        if ($__modeBlendTail !== '') {
+                            $__modeDisplayLabel = $__modeMainLabel !== '' ? ($__modeMainLabel . ' - ' . $__modeBlendTail) : $__modeBlendTail;
+                        } else {
+                            $__modeDisplayLabel = $__modeMainLabel;
+                        }
                     }
                 }
             }
