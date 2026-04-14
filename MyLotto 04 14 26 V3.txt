@@ -11671,7 +11671,6 @@ foreach ($bestOpps as $__dLid => $__dOpp) {
             if ((string)($__runRow['source'] ?? '') === 'skai_prediction') {
                 $__runDisp = mylottoexpertResolveRunDisplayInfo($__runRow, $__methodLabels);
                 $__modeLabel = $__runDisp['mode'] !== '' ? $__runDisp['mode'] : 'Default';
-                $__modeCount = 1;
                 $__modeRankScore = (float)($__scoredRun['rank_score'] ?? 0);
                 $__modeHitScore = (int)($__scoredRun['hits'] ?? 0);
                 $__modeBlendInfo = mylottoexpertBuildBlendDisplayInfo($__runRow, (array)($__runDisp['settings'] ?? array()));
@@ -11693,7 +11692,7 @@ foreach ($bestOpps as $__dLid => $__dOpp) {
                     );
                 }
 
-                $__modeStats[$__modeLabel]['count'] += $__modeCount;
+                $__modeStats[$__modeLabel]['count']++;
 
                 $__modeIsBetter = (
                     $__modeRankScore > (float)$__modeStats[$__modeLabel]['best_rank_score']
@@ -11800,7 +11799,7 @@ foreach ($bestOpps as $__dLid => $__dOpp) {
                 $__modeMainLabel = trim((string)$__modeMatch[1]);
                 $__modeBlendValue = trim((string)$__modeMatch[2]);
                 $__modeDisplayLabel = $__modeMainLabel;
-            } elseif ($__modeBlendValue === '') {
+            } else {
                 if (preg_match('/AI\s+share\s*:\s*(AI|Skip)\s*(\d+(?:\.\d+)?)%/i', $__modeLabelRaw, $__modeBlendInline)) {
                     $__modeBlendValue = strtoupper(trim((string)$__modeBlendInline[1])) . ' ' . trim((string)$__modeBlendInline[2]) . '%';
                 } elseif (preg_match('/Blend\s*:\s*(AI|Skip)\s*(\d+(?:\.\d+)?)%/i', $__modeLabelRaw, $__modeBlendInline2)) {
